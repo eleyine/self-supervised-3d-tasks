@@ -11,7 +11,7 @@ class Numpy2DLoader(DataGeneratorBase):
                  batch_size=32,
                  shuffle=False,
                  pre_proc_func=None,
-                 n_classes = 2):
+                 n_classes = 3):
         self.n_classes = n_classes
         self.path_to_data = data_path
         self.label_dir = data_path + "_labels"
