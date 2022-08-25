@@ -27,7 +27,7 @@ class Numpy2DLoader(DataGeneratorBase):
 
         for file_name in list_files_temp:
             path_to_image = "{}/{}".format(self.path_to_data, file_name)
-            print('path_to_image: {}'.format(path_to_image))
+            # print('path_to_image: {}'.format(path_to_image))
 
             try:
                 if self.label_dir:

@@ -115,7 +115,7 @@ class DataGeneratorBase(keras.utils.Sequence):
             random.shuffle(self.list_IDs)
 
     def __data_generation_intern(self, list_files_temp):
-        print(list_files_temp)
+        # print(list_files_temp)
         data_x, data_y = self.data_generation(list_files_temp)
 
         if self.pre_proc_func:
