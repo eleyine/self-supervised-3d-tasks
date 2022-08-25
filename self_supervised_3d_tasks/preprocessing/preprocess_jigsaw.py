@@ -1,7 +1,10 @@
 import random
 
 import numpy as np
-
+import os
+# os.getcwd()
+# os.chdir('/Users/laurentletourneau-guillon/Dropbox/CHUM/RECHERCHE/2022 Eleyine self-supervised segmentations ICH/HealthML')
+# os.getcwd()
 from self_supervised_3d_tasks.preprocessing.utils.crop import crop_patches, crop_patches_3d
 from self_supervised_3d_tasks.preprocessing.utils.pad import pad_to_final_size_3d, pad_to_final_size_2d
 

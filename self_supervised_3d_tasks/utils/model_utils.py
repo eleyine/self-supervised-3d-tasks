@@ -371,7 +371,8 @@ def get_writing_path(working_dir, root_config_file):
 
     Path(working_dir).mkdir()
     print("writing to: " + working_dir)
-    shutil.copy2(root_config_file, working_dir)
+    if root_config_file is not None:
+        shutil.copy2(root_config_file, working_dir)
 
     return Path(working_dir)
 

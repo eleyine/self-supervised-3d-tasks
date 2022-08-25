@@ -57,16 +57,47 @@ def weighted_dice_coefficient_per_class(y_true, y_pred, class_to_predict=0, smoo
 
 def weighted_dice_coefficient(y_true, y_pred, smooth=0.00001):
     axis = tuple(range(y_pred.shape.rank - 1))
-
-    return K.mean(2. * (K.sum(y_true * y_pred,
+    result = K.mean(2. * (K.sum(y_true * y_pred,
                               axis=axis) + smooth / 2) / (K.sum(y_true,
                                                                 axis=axis) + K.sum(y_pred,
                                                                                    axis=axis) + smooth))
+    return result
 
 
 def weighted_dice_coefficient_loss(y_true, y_pred):
     return -weighted_dice_coefficient(y_true, y_pred)
 
+
+# def simple_dice_score(y, y_pred):
+#     class_to_predict = 1
+#     y = np.argmax(y, axis=-1).flatten()
+#     y_pred = np.argmax(y_pred, axis=-1).flatten()
+#     j = jaccard_score(y, y_pred, average=None)
+#     result = np.array([(2 * x) / (1 + x) for x in j])[class_to_predict]
+#     return result
+
+def simple_dice_loss(y_true, y_pred):
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    intersection = K.sum(y_true_f* y_pred_f)
+    val = (2. * intersection + K.epsilon()) / (K.sum(y_true_f * y_true_f) + K.sum(y_pred_f * y_pred_f) + K.epsilon())
+    return 1. - val
+
+# from https://www.kaggle.com/code/bigironsphere/loss-function-library-keras-pytorch/notebook
+def dice_bce_loss(y_true, y_pred, smooth=1e-6):
+    # flatten label and prediction tensors
+    # inputs = K.flatten(inputs)
+    # targets = K.flatten(targets)
+    binary_crossentropy = tf.keras.losses.BinaryCrossentropy()
+    bce = binary_crossentropy(y_true, y_pred)
+    axis = tuple(range(y_pred.shape.rank - 1))
+    dice_loss = 1 - (2. * (K.sum(y_true * y_pred,
+                                axis=axis) + smooth) / (K.sum(y_true,
+                                                                  axis=axis) + K.sum(y_pred,
+                                                                                     axis=axis) + smooth))
+    dice_bce = bce + dice_loss
+
+    return dice_bce
 
 def weighted_sum_loss(alpha=0.5, beta=0.5, weights=(1, 5, 10)):
     # Note: this is specific for 3 classes
@@ -121,8 +152,8 @@ def score_cat_acc(y, y_pred):
 def score_jaccard(y, y_pred):
     y = np.argmax(y, axis=-1).flatten()
     y_pred = np.argmax(y_pred, axis=-1).flatten()
-
-    return jaccard_score(y, y_pred, average="macro")
+    result = jaccard_score(y, y_pred, average="macro")
+    return result
 
 
 def score_dice(y, y_pred):
@@ -138,8 +169,8 @@ def score_dice_class(y, y_pred, class_to_predict):
     y_pred = np.argmax(y_pred, axis=-1).flatten()
 
     j = jaccard_score(y, y_pred, average=None)
-
-    return np.array([(2 * x) / (1 + x) for x in j])[class_to_predict]
+    result = np.array([(2 * x) / (1 + x) for x in j])[class_to_predict]
+    return result
 
 def brats_et(y, y_pred):
     y = np.argmax(y, axis=-1).flatten()

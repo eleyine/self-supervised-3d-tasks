@@ -115,7 +115,7 @@ class CPCBuilder(AlgorithmBuilderBase):
     def get_training_model(self):
         model = self.apply_model()
         model.compile(
-            optimizer=keras.optimizers.Adam(lr=self.lr),
+            optimizer=keras.optimizers.Adam(lr=self.lr),  # note : if you get nan, add clipnorm=1 from https://stackoverflow.com/questions/37232782/nan-loss-when-training-regression-network
             loss='binary_crossentropy',
             metrics=['binary_accuracy']
         )

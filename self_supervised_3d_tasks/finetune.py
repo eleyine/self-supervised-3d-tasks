@@ -17,7 +17,8 @@ import self_supervised_3d_tasks.utils.metrics as metrics
 from self_supervised_3d_tasks.utils.callbacks import TerminateOnNaN, NaNLossError, LogCSVWithStart
 from self_supervised_3d_tasks.utils.metrics import weighted_sum_loss, jaccard_distance, \
     weighted_categorical_crossentropy, weighted_dice_coefficient, weighted_dice_coefficient_loss, \
-    weighted_dice_coefficient_per_class, brats_wt_metric, brats_et_metric, brats_tc_metric
+    weighted_dice_coefficient_per_class, brats_wt_metric, brats_et_metric, brats_tc_metric, dice_bce_loss, \
+    simple_dice_loss
 from self_supervised_3d_tasks.test_data_backend import CvDataKaggle, StandardDataLoader
 from self_supervised_3d_tasks.train import (
     keras_algorithm_list,
@@ -28,6 +29,9 @@ from self_supervised_3d_tasks.utils.model_utils import (
     print_flat_summary)
 from self_supervised_3d_tasks.utils.model_utils import init
 
+config = tf.compat.v1.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.9  # 0.6 sometimes works better for folks
+tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
 
 def get_score(score_name):
     if score_name == "qw_kappa":
@@ -56,6 +60,8 @@ def get_score(score_name):
         return metrics.brats_tc
     elif score_name == "brats_et":
         return metrics.brats_et
+    # elif score_name == "simple_dice_score":
+    #     return metrics.simple_dice_score
     else:
         raise ValueError(f"score {score_name} not found")
 
@@ -80,12 +86,12 @@ def make_custom_metrics(metrics):
         def dice_class_1(y_true, y_pred):
             return weighted_dice_coefficient_per_class(y_true, y_pred, class_to_predict=1)
 
-        def dice_class_2(y_true, y_pred):
-            return weighted_dice_coefficient_per_class(y_true, y_pred, class_to_predict=2)
+        # def dice_class_2(y_true, y_pred):
+        #     return weighted_dice_coefficient_per_class(y_true, y_pred, class_to_predict=2)
 
         metrics.append(dice_class_0)
         metrics.append(dice_class_1)
-        metrics.append(dice_class_2)
+        # metrics.append(dice_class_2)
 
     return metrics
 
@@ -99,7 +105,10 @@ def make_custom_loss(loss):
         loss = weighted_dice_coefficient_loss
     elif loss == "weighted_categorical_crossentropy":
         loss = weighted_categorical_crossentropy()
-
+    elif loss == "dice_bce_loss":
+        loss = dice_bce_loss
+    elif loss == "simple_dice_loss":
+        loss = simple_dice_loss
     return loss
 
 
@@ -122,6 +131,9 @@ def run_single_test(algorithm_def, gen_train, gen_val, load_weights, freeze_weig
                     clipnorm=None, clipvalue=None, model_callback=None, working_dir=None):
     print(metrics)
     print(loss)
+
+    # if working_dir is None:
+    #     working_dir = Path(model_checkpoint).expanduser().parent / (Path(model_checkpoint).expanduser().stem + "_test")
 
     metrics = make_custom_metrics(metrics)
     loss = make_custom_loss(loss)
@@ -166,7 +178,10 @@ def run_single_test(algorithm_def, gen_train, gen_val, load_weights, freeze_weig
             if logging_csv:
                 w_callbacks.append(logger_normal)
 
+            # having issues with the custom loss function so using binary cross entropy for now
+            # model.compile(optimizer=get_optimizer(clipnorm, clipvalue, lr), loss="binary_crossentropy", metrics=metrics)
             model.compile(optimizer=get_optimizer(clipnorm, clipvalue, lr), loss=loss, metrics=metrics)
+
             model.fit(
                 x=gen_train,
                 validation_data=gen_val,
@@ -185,15 +200,16 @@ def run_single_test(algorithm_def, gen_train, gen_val, load_weights, freeze_weig
             if logging_csv:
                 callbacks.append(logger_normal)
 
-        if working_dir is not None:
-            save_checkpoint_every_n_epochs = 5
-            mc_c = tf.keras.callbacks.ModelCheckpoint(str(working_dir / "weights-improvement-{epoch:03d}.hdf5"),
-                                                      monitor="val_loss",
-                                                      mode="min", save_best_only=True)  # reduce storage space
-            mc_c_epochs = tf.keras.callbacks.ModelCheckpoint(str(working_dir / "weights-{epoch:03d}.hdf5"),
-                                                             period=save_checkpoint_every_n_epochs)  # reduce storage space
-            callbacks.append(mc_c)
-            callbacks.append(mc_c_epochs)
+        save_checkpoint_every_n_epochs = 1
+        tb_c = tf.keras.callbacks.TensorBoard(log_dir=str(working_dir))
+        mc_c = tf.keras.callbacks.ModelCheckpoint(str(working_dir / "weights-improvement-{epoch:03d}.hdf5"),
+                                                    monitor="val_loss",
+                                                    mode="min", save_best_only=False)  # reduce storage space
+        mc_c_epochs = tf.keras.callbacks.ModelCheckpoint(str(working_dir / "weights-{epoch:03d}.hdf5"),
+                                                            period=save_checkpoint_every_n_epochs)  # reduce storage space
+        callbacks.append(mc_c)
+        callbacks.append(mc_c_epochs)
+        callbacks.append(tb_c)
 
         # recompile model
         model.compile(optimizer=get_optimizer(clipnorm, clipvalue, lr), loss=loss, metrics=metrics)
@@ -241,7 +257,7 @@ class MaxTriesExceeded(Exception):
         return f'Maximum amount of tries ({self.max_tries}) exceeded for {self.func}.'
 
 
-def try_until_no_nan(func, max_tries=4):
+def try_until_no_nan(func, max_tries=5):
     for _ in range(max_tries):
         try:
             return func()
@@ -339,6 +355,15 @@ def run_complex_test(
 
             gen_train, gen_val, x_test, y_test = data_loader.get_dataset(i, percentage)
 
+            # x_test = x_test.astype(np.float32)
+            # y_test = y_test.astype(np.float32)
+
+            tf.cast(y_test, tf.float32)
+
+            print('x_test type', x_test.dtype)
+            print('y_test type', y_test.dtype)
+            print('x_test shape', x_test.shape)
+            print('y_test shape', y_test.shape)
             if epochs_frozen > 0:
                 logging_a_path = logging_base_path / f"split{train_split}frozen_rep{i}.log"
                 a = try_until_no_nan(
@@ -346,15 +371,18 @@ def run_complex_test(
                                             batch_size, epochs_frozen, epochs_warmup, model_checkpoint, scores, loss,
                                             metrics,
                                             logging_a_path,
-                                            kwargs, clipnorm=clipnorm, clipvalue=clipvalue))  # frozen
+                                            kwargs, clipnorm=clipnorm, clipvalue=clipvalue,
+                                            working_dir=working_dir))  # frozen
                 a_s.append(a)
             if epochs_initialized > 0:
                 logging_b_path = logging_base_path / f"split{train_split}initialized_rep{i}.log"
+
                 b = try_until_no_nan(
                     lambda: run_single_test(algorithm_def, gen_train, gen_val, True, False, x_test, y_test, lr,
                                             batch_size, epochs_initialized, epochs_warmup, model_checkpoint, scores,
                                             loss, metrics,
-                                            logging_b_path, kwargs, clipnorm=clipnorm, clipvalue=clipvalue))
+                                            logging_b_path, kwargs, clipnorm=clipnorm, clipvalue=clipvalue,
+                                            working_dir=working_dir))
                 b_s.append(b)
             if epochs_random > 0:
                 logging_c_path = logging_base_path / f"split{train_split}random_rep{i}.log"

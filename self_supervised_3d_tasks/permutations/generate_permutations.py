@@ -5,8 +5,8 @@ import numpy as np
 if __name__ == "__main__":
     perms = []
 
-    for i in range(100):
-        pp = np.random.permutation(27)
+    for i in range(16):
+        pp = np.random.permutation(16)
         # print(pp)
 
         for ref in perms:
@@ -17,9 +17,7 @@ if __name__ == "__main__":
 
     perms = np.stack(perms)
 
-    permutation_path = str(
-        Path(__file__).parent / "permutations3d_100_27.npy"
-    )
+    permutation_path = str('/Users/laurentletourneau-guillon/Dropbox/CHUM/RECHERCHE/2022 Eleyine self-supervised segmentations ICH/HealthML/self_supervised_3d_tasks/permutations/permutations3d_100_27.npy')
 
     print(permutation_path)
 

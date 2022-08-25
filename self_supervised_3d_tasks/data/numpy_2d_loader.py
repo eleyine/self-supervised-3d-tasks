@@ -11,7 +11,7 @@ class Numpy2DLoader(DataGeneratorBase):
                  batch_size=32,
                  shuffle=False,
                  pre_proc_func=None,
-                 n_classes = 3):
+                 n_classes = 2):
         self.n_classes = n_classes
         self.path_to_data = data_path
         self.label_dir = data_path + "_labels"
@@ -27,11 +27,13 @@ class Numpy2DLoader(DataGeneratorBase):
 
         for file_name in list_files_temp:
             path_to_image = "{}/{}".format(self.path_to_data, file_name)
+            # print('path_to_image: {}'.format(path_to_image))
 
             try:
                 if self.label_dir:
                     path_label = Path("{}/{}".format(self.label_dir, file_name))
                     path_label = path_label.with_name(path_label.stem).with_suffix(path_label.suffix)
+                    # print('path_label: {}'.format(path_label))
                     mask = np.load(path_label)
 
                 path_to_image = "{}/{}".format(self.path_to_data, file_name)
@@ -55,5 +57,9 @@ class Numpy2DLoader(DataGeneratorBase):
             data_y = np.rint(data_y).astype(np.int)
             data_y = np.eye(self.n_classes)[data_y]
             data_y = np.squeeze(data_y, axis=-2)  # remove second last axis, which is still 1
+
+        # Make sure there are no None values
+        assert not np.isnan(data_x).any()
+        assert not np.isnan(data_y).any()
 
         return data_x, data_y

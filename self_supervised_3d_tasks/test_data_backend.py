@@ -197,6 +197,7 @@ class StandardDataLoader:
         )
 
         x_test, y_test = get_dataset_test(self.dataset_name, self.batch_size, f_val, self.kwargs)
+        y_test = y_test.astype(np.float32) # HACK
         return gen_train, gen_val, x_test, y_test
 
 
