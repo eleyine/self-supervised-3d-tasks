@@ -27,7 +27,7 @@ class Numpy2DLoader(DataGeneratorBase):
 
         for file_name in list_files_temp:
             path_to_image = "{}/{}".format(self.path_to_data, file_name)
-            # print('path_to_image: {}'.format(path_to_image))
+            print('path_to_image: {}'.format(path_to_image))
 
             try:
                 if self.label_dir:
@@ -49,8 +49,11 @@ class Numpy2DLoader(DataGeneratorBase):
             except Exception as e:
                 print("Error while loading image {}.".format(path_to_image))
                 continue
-
-        data_x = np.stack(data_x)
+        try:
+            data_x = np.stack(data_x)
+        except:
+            print(data_x.shape)
+            # print(data_x[0,0,0])
         data_y = np.stack(data_y)
 
         if self.label_dir:
