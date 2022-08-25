@@ -1,8 +1,8 @@
 {
   "algorithm": "cpc",
-  "data_dir_train": "/home/eleyine/dropbox/2022 Eleyine self-supervised segmentations ICH/MAIN/2_DATA_2022_SSSegmentation/seg_cases_npy/train/img",
-  "data_dir_test": "/home/eleyine/dropbox/2022 Eleyine self-supervised segmentations ICH/MAIN/2_DATA_2022_SSSegmentation/seg_cases_npy/test/img",
-  "model_checkpoint":"/home/eleyine/netstore/workspace/cpc_pancreas2d_5/weights-020.hdf5",
+  "data_dir_train": "/root/data/seg_cases_npy/train/img",
+  "data_dir_test": "/root/data/seg_cases_npy/test/img",
+  "model_checkpoint":"/root/netstore/workspace/TO_ADD.hdf5",
   "dataset_name": "pancreas2d",
 
   "data_is_3D": false,
@@ -12,7 +12,7 @@
   "patches_per_side": 5,
   "data_dim": 128,
 
-  "loss": "simple_dice_loss",
+  "loss": "weighted_dice_loss",
   "scores": ["dice", "jaccard", "dice_pancreas_0", "dice_pancreas_1"],
   "metrics": ["accuracy", "weighted_dice_coefficient", "weighted_dice_coefficient_per_class_pancreas"],
 
@@ -21,7 +21,7 @@
   "number_channels": 1,
   "batch_size": 8,
 
-  "exp_splits": [100, 50],
+  "exp_splits": [100, 50, 10],
   "lr": 1e-3,
   "epochs_initialized": 100,
   "epochs_frozen": 0,
