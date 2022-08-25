@@ -1,6 +1,6 @@
 {
   "algorithm": "cpc",
-  "data_dir": "/home/eleyine/dropbox/2022 Eleyine self-supervised segmentations ICH/MAIN/2_DATA_2022_SSSegmentation/ssl_pretext_data_npy",
+  "data_dir": "/home/eleyine/dropbox/2022 Eleyine self-supervised segmentations ICH/MAIN/2_DATA_2022_SSSegmentation/all_cases_npy/img",
   "dataset_name": "pancreas2d",
 
   "data_is_3D": false,
