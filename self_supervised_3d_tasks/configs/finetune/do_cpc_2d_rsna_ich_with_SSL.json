@@ -2,7 +2,7 @@
   "algorithm": "cpc",
   "data_dir_train": "/root/data/seg_cases_npy/train/img",
   "data_dir_test": "/root/data/seg_cases_npy/test/img",
-  "model_checkpoint":"/root/netstore/workspace/TO_ADD.hdf5",
+  "model_checkpoint":"/root/netstore/workspace/cpc_pancreas2d_9/weights-045.hdf5",
   "dataset_name": "pancreas2d",
 
   "data_is_3D": false,
@@ -27,5 +27,5 @@
   "epochs_frozen": 0,
   "epochs_random": 0,
   "epochs_warmup": 5,
-  "repetitions": 3
+  "repetitions": 1
 }
