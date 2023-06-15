@@ -207,9 +207,9 @@ def run_single_test(algorithm_def, gen_train, gen_val, load_weights, freeze_weig
                                                     mode="min", save_best_only=False)  # reduce storage space
         mc_c_epochs = tf.keras.callbacks.ModelCheckpoint(str(working_dir / "weights-{epoch:03d}.hdf5"),
                                                             period=save_checkpoint_every_n_epochs)  # reduce storage space
+        callbacks.append(tb_c)
         callbacks.append(mc_c)
         callbacks.append(mc_c_epochs)
-        callbacks.append(tb_c)
 
         # recompile model
         model.compile(optimizer=get_optimizer(clipnorm, clipvalue, lr), loss=loss, metrics=metrics)
@@ -287,25 +287,31 @@ def run_complex_test(
         do_cross_val=False,
         **kwargs,
 ):
-    model_checkpoint = expanduser(model_checkpoint)
-    if os.path.isdir(model_checkpoint):
-        weight_files = list(Path(model_checkpoint).glob("weights-improvement*.hdf5"))
+    try:
+        model_checkpoint = expanduser(model_checkpoint)
+        if os.path.isdir(model_checkpoint):
+            weight_files = list(Path(model_checkpoint).glob("weights-improvement*.hdf5"))
 
-        if epochs_initialized > 0 or epochs_frozen > 0:
-            assert len(weight_files) > 0, "empty directory!"
+            if epochs_initialized > 0 or epochs_frozen > 0:
+                assert len(weight_files) > 0, "empty directory!"
 
-        weight_files.sort()
-        model_checkpoint = str(weight_files[-1])
+            weight_files.sort()
+            model_checkpoint = str(weight_files[-1])
+    except:
+        model_checkpoint = None
 
     kwargs["model_checkpoint"] = model_checkpoint
     kwargs["root_config_file"] = root_config_file
     metrics = list(metrics)
 
-    working_dir = get_writing_path(
-        Path(model_checkpoint).expanduser().parent
-        / (Path(model_checkpoint).expanduser().stem + "_test"),
-        root_config_file,
-    )
+    if model_checkpoint:
+        working_dir = get_writing_path(
+            Path(model_checkpoint).expanduser().parent
+            / (Path(model_checkpoint).expanduser().stem + "_test"),
+            root_config_file,
+        )
+    else:
+        working_dir = Path('~/netstore/workspace')
 
     algorithm_def = keras_algorithm_list[algorithm].create_instance(**kwargs)
 
